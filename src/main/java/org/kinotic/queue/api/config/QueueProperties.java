@@ -53,8 +53,8 @@ public class QueueProperties {
      * How much of each shard's newest records every copy keeps, or null to limit shards by {@link #retentionPeriod}
      * only. The oldest segments of a copy that has grown past this are deleted while it stays at least this large, so
      * it keeps at least this much, unless {@link #retentionPeriod} lets records go sooner, and at most one segment
-     * more: segments close at a quarter of this, but at least 64 KB and at most 1 GB. Must be the same on every queue
-     * node.
+     * more. A segment closes at the first record appended once it has reached a quarter of this, but at least 64 KB
+     * and at most 1 GB, so it is smaller than that plus one record. Must be the same on every queue node.
      */
     private DataSize retentionBytes;
 
