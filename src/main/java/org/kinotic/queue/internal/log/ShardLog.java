@@ -320,7 +320,7 @@ public final class ShardLog implements AutoCloseable {
 
     /**
      * @return the offset before which the retention lets entries go: the end of the oldest segments whose entries are
-     * all older than the retention period, or that the shard can lose while staying larger than the retention size.
+     * all older than the retention period, or that the shard can lose while staying at least the retention size.
      * The segment taking writes always stays.
      */
     public long retainedFrom() {

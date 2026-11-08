@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -289,6 +290,18 @@ public class ShardLogTests {
             assertEquals(7, copy.acceptedEpoch());
             assertEquals(ReplicationStatus.STALE_EPOCH, copy.replicate(new ReplicationBatch(6, -1, -1, 0, 1, List.of(entry(0, 6)))).status());
             assertEquals(0, copy.nextOffset());
+        }
+    }
+
+    @Test
+    public void aRelativeDataDirectoryIsCreatedForTheStorageId() throws Exception {
+        Path relative = Path.of("relative-queue-data-" + UUID.randomUUID());
+        try {
+            String storageId = QueueLog.storageId(relative);
+
+            assertEquals(storageId, QueueLog.storageId(relative));
+        } finally {
+            FileUtils.deleteDirectory(relative.toFile());
         }
     }
 

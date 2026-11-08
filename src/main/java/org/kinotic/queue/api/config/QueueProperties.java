@@ -49,10 +49,10 @@ public class QueueProperties {
     private Duration retentionPeriod = Duration.ofDays(7);
 
     /**
-     * The size each shard is kept under, or null to limit shards by {@link #retentionPeriod} only. The oldest segments
-     * of a larger shard are deleted, so a shard's records take about this much space on each copy, plus the segment
-     * still taking records: up to a quarter of this, but at least 64 KB and at most 1 GB. Must be the same on every
-     * queue node.
+     * How much of each shard's newest records every copy keeps, or null to limit shards by {@link #retentionPeriod}
+     * only. The oldest segments of a copy that has grown past this are deleted while it stays at least this large, so
+     * it takes between this and a quarter more: segments close at a quarter of this, but at least 64 KB and at most
+     * 1 GB. Must be the same on every queue node.
      */
     private DataSize retentionBytes;
 

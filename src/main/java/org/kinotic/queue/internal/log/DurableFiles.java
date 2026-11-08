@@ -60,16 +60,18 @@ final class DurableFiles {
      * Creates the directory and any missing parent, each of which survives a crash or power loss once this returns.
      */
     static void createDirectories(Path directory) {
-        if (!Files.isDirectory(directory)) {
-            createDirectories(directory.getParent());
+        // Absolute, so the recursion ends at a root instead of at the null parent of a relative path's first segment
+        Path absolute = directory.toAbsolutePath();
+        if (!Files.isDirectory(absolute)) {
+            createDirectories(absolute.getParent());
             try {
-                Files.createDirectory(directory);
+                Files.createDirectory(absolute);
             } catch (FileAlreadyExistsException e) {
                 // Created concurrently; forcing the parent below still makes it durable
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-            force(directory.getParent());
+            force(absolute.getParent());
         }
     }
 
