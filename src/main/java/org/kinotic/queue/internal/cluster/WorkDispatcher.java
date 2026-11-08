@@ -30,8 +30,9 @@ import java.util.function.Supplier;
  * or leased {@link #MAX_DELIVERIES} times without being accepted, is done once it is in the group's dead-letter queue.
  * A lease a closing worker returns unseen does not count. Records the retention deletes before the group finishes them
  * are skipped. The group's low watermark, the offset before which every record is done, is stored in the queue's group
- * offsets and copied to a majority of the shard's copies, so the shard's next owner resumes the group from it. A lease
- * can be renewed while its worker still processes the record. Runs on the owner's context.
+ * offsets and copied to a majority of the shard's copies, so the shard's next owner resumes the group from it, leasing
+ * the records past it again and counting their leases from one. A lease can be renewed while its worker still
+ * processes the record. Runs on the owner's context.
  */
 @Slf4j
 @RequiredArgsConstructor

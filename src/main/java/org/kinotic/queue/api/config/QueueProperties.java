@@ -40,10 +40,11 @@ public class QueueProperties {
      * How long records are kept. Records are deleted in whole segments: a segment closes at the first write once it is
      * half this old, a day old, or a quarter of {@link #retentionBytes} large, and is deleted once the segment after
      * it is this old, so a record lives at least this long unless {@link #retentionBytes} lets it go sooner, and the
-     * segment taking writes stays until a write closes it, however old it gets. A write is a record, or the entry a
-     * change of the shard's owner or copies adds. Consumers and worker groups that have not reached a deleted record
-     * continue at the oldest record kept. A consumer's or worker group's position on a shard also expires once no
-     * subscription or worker of it used the position for this long. Must be the same on every queue node.
+     * segment taking writes stays until a write closes it, however old it gets. A write is a record, or an entry the
+     * shard's owner adds on its own, as when the shard's owner or copies change. Consumers and worker groups that
+     * have not reached a deleted record continue at the oldest record kept. A consumer's or worker group's position
+     * on a shard also expires once no subscription or worker of it used the position for this long. Must be the same
+     * on every queue node.
      */
     @NotNull
     @DurationMin(seconds = 1)
@@ -53,10 +54,11 @@ public class QueueProperties {
      * How much of each shard's newest records every copy keeps, measured as the records' keys and payloads, or null
      * to limit shards by {@link #retentionPeriod} only. The oldest segments of a copy that has grown past this are
      * deleted while it stays at least this large, so it keeps at least this much, unless {@link #retentionPeriod}
-     * lets records go sooner, and at most one segment more; a copy exceeds that until the shard owner's trim reaches
-     * it, and while the shard has no owner. A segment closes at the first write once it has reached a quarter of
-     * this, but at least 64 KB and at most 1 GB, so it is smaller than that plus one record. The copy's files take
-     * more than this on disk. Must be the same on every queue node.
+     * lets records go sooner, and at most one segment more on the shard's owner, or two on its other copies, whose
+     * segments do not end where the owner's do; a copy exceeds that until the owner's trim reaches it, and while the
+     * shard has no owner. A segment closes at the first write once it has reached a quarter of this, but at least
+     * 64 KB and at most 1 GB, so it is smaller than that plus one record. The copy's files take more than this on
+     * disk. Must be the same on every queue node.
      */
     private DataSize retentionBytes;
 

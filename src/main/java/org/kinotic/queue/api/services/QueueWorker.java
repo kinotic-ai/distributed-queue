@@ -9,9 +9,9 @@ import org.kinotic.queue.api.model.WorkItem;
  * record the worker neither settles nor {@link #renew renews} within its lease, or still holds when it closes, is
  * leased to another worker, and a record leased five times without being accepted goes to the group's
  * {@link QueueService#deadLetterQueue dead-letter queue}; a lease counts unless the worker closed before its handler
- * received the record. A handler that throws closes the worker. A shard that cannot be
- * read for 30 seconds is reported to the {@link #exceptionHandler exception handler} once, and leasing keeps retrying
- * it. Methods must be called on the Vert.x context the worker delivers on.
+ * received the record, and the count starts again when the shard's owner changes. A handler that throws closes the
+ * worker. A shard that cannot be read for 30 seconds is reported to the {@link #exceptionHandler exception handler}
+ * once, and leasing keeps retrying it. Methods must be called on the Vert.x context the worker delivers on.
  */
 public interface QueueWorker extends ReadStream<WorkItem> {
 

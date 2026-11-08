@@ -13,7 +13,9 @@ public interface QueueSubscription extends ReadStream<QueueRecord> {
 
     /**
      * Commits the consumer's position through {@code record} on the record's shard, so the consumer's next
-     * subscription resumes after it. Committing a record at or before an already committed one has no effect.
+     * subscription resumes after it, except as {@link QueueService#subscribe} describes for one starting at the
+     * earliest record while fewer than a majority of the shard's copies answer. Committing a record at or before an
+     * already committed one has no effect.
      *
      * @param record a record this subscription delivered
      * @return completes once a majority of the shard's copies stores the position
