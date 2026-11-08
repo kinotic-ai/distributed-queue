@@ -39,7 +39,8 @@ public class QueueProperties {
     /**
      * How long records are kept. Records are deleted in whole segments: a segment closes at the first record appended
      * once it is half this old, a day old, or a quarter of {@link #retentionBytes} large, and is deleted once the
-     * segment after it is this old, so a record lives at least this long. Consumers and worker groups that have not
+     * segment after it is this old, so a record lives at least this long unless {@link #retentionBytes} lets it go
+     * sooner. Consumers and worker groups that have not
      * reached a deleted record continue at the oldest record kept. A consumer's or worker group's position on a shard
      * also expires once no subscription or worker of it used the position for this long. Must be the same on every
      * queue node.
@@ -51,8 +52,9 @@ public class QueueProperties {
     /**
      * How much of each shard's newest records every copy keeps, or null to limit shards by {@link #retentionPeriod}
      * only. The oldest segments of a copy that has grown past this are deleted while it stays at least this large, so
-     * it takes between this and a quarter more: segments close at a quarter of this, but at least 64 KB and at most
-     * 1 GB. Must be the same on every queue node.
+     * it keeps at least this much, unless {@link #retentionPeriod} lets records go sooner, and at most one segment
+     * more: segments close at a quarter of this, but at least 64 KB and at most 1 GB. Must be the same on every queue
+     * node.
      */
     private DataSize retentionBytes;
 
