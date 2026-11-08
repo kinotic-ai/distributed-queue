@@ -73,10 +73,11 @@ public interface QueueService {
      * record the consumer committed, or at {@code startPosition} when the consumer has never committed on that
      * shard. Delivery is at least once: every record after the last commit is delivered again to the next
      * subscription of the same consumer, on any queue node. Starting at the earliest record, a subscription opens
-     * once one copy of each shard answers with the consumer's committed position, so while fewer than a majority
-     * answer it can resume before the last commit, which the answering copies may have missed; starting at the
-     * latest record, it waits for a majority. Only records held by a majority of a shard's copies are delivered. One
-     * subscription per consumer may be open at a time. A consumer's committed position on a shard expires once no
+     * once a majority of each shard's copies answers with the consumer's committed position, or once every copy's
+     * request has answered or failed with at least one answer among them, and in that case it can resume before the
+     * last commit, which the answering copies may have missed; starting at the latest record, it opens only on a
+     * majority. Only records held by a majority of a shard's copies are delivered. One subscription per consumer may
+     * be open at a time. A consumer's committed position on a shard expires once no
      * subscription of the consumer was open or committed there for the queue's retention period
      * ({@code kinotic.queue.retentionPeriod}), and the consumer then starts there at {@code startPosition} again. A
      * handler that throws closes the subscription. Fails when the queue does not exist, or, starting at the latest
