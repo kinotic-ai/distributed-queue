@@ -47,6 +47,12 @@ repositories {
     }
 }
 
+// kinotic-core is consumed as a snapshot, so every build asks Central for the newest one instead of keeping a cached
+// copy for Gradle's default 24 hours
+configurations.configureEach {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 dependencyManagement {
     imports {
         mavenBom "net.openhft:chronicle-bom:${chronicleBomVersion}"

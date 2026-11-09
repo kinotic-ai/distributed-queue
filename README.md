@@ -75,7 +75,7 @@ A server running the module registers these meters with Micrometer's global regi
 ./gradlew build
 ```
 
-The tests start Ignite and Vert.x clusters in the test JVM and need no external services. Every version lives in `gradle.properties` and is pinned once in the `dependencyManagement` block of `build.gradle`; `kinoticCoreVersion` selects the `kinotic-core` the module is built against, resolved from Maven Central or its snapshot repository.
+The tests start Ignite and Vert.x clusters in the test JVM and need no external services. Every version lives in `gradle.properties` and is pinned once in the `dependencyManagement` block of `build.gradle`; `kinoticCoreVersion` selects the `kinotic-core` the module is built against, resolved from Maven Central or its snapshot repository; a snapshot is checked for a newer copy on every build.
 
 ## License
 
