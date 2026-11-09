@@ -1,39 +1,201 @@
 plugins {
-    id 'org.kinotic.java-library-conventions'
+    id 'java-library'
+    id 'maven-publish'
+    id 'io.freefair.lombok'
+    id 'io.spring.dependency-management'
+    id 'org.jreleaser'
+}
+
+group = 'org.kinotic'
+version = "${queueVersion}"
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
+javadoc {
+    // Delombok generates the sources javadoc runs on, so the types it emits carry no doc comments; Xdoclint:none
+    // keeps those missing-comment notes off the build log
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.addBooleanOption('html5', true)
+}
+
+// Byte-identical archives for identical inputs
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.withType(Jar).configureEach {
+    manifest {
+        attributes 'Implementation-Version': project.version
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'Central Portal Snapshots'
+        url = uri('https://central.sonatype.com/repository/maven-snapshots/')
+        mavenContent {
+            snapshotsOnly()
+        }
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "net.openhft:chronicle-bom:${chronicleBomVersion}"
+        mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion}") {
+            // The versions kinotic-core is built against; Vert.x also requires Netty 4.2.17
+            bomProperty 'httpclient5.version', httpclient5Version
+            bomProperty 'httpcore5.version', httpcore5Version
+            bomProperty 'jackson-2-bom.version', jackson2Version
+            bomProperty 'jackson-bom.version', jacksonVersion
+            bomProperty 'log4j2.version', log4j2Version
+            bomProperty 'netty.version', nettyVersion
+        }
+    }
+    dependencies {
+        dependency "commons-io:commons-io:${commonsIoVersion}"
+        dependency "io.vertx:vertx-core:${vertxVersion}"
+        dependency "io.vertx:vertx-ignite:${vertxVersion}"
+        dependency "org.apache.ignite:ignite-core:${igniteVersion}"
+        dependency "org.apache.ignite:ignite-slf4j:${igniteVersion}"
+        dependency "org.kinotic:kinotic-core:${kinoticCoreVersion}"
+    }
 }
 
 dependencies {
-    api project(':kinotic-core')
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
-    implementation 'commons-io:commons-io'
-
-    implementation 'io.micrometer:micrometer-core'
-
+    api 'org.kinotic:kinotic-core'
     api 'io.vertx:vertx-core'
 
+    implementation 'commons-io:commons-io'
+    implementation 'io.micrometer:micrometer-core'
     implementation('net.openhft:chronicle-queue') {
         // chronicle-core reports usage statistics to Chronicle Software whenever this jar is on the classpath
         exclude group: 'net.openhft', module: 'chronicle-analytics'
     }
     implementation 'net.openhft:zero-allocation-hashing'
-
+    implementation 'org.apache.commons:commons-lang3'
     implementation 'org.apache.ignite:ignite-core'
-
     implementation 'org.springframework.boot:spring-boot'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework:spring-context'
 
     testImplementation 'io.vertx:vertx-ignite'
     testImplementation 'org.apache.ignite:ignite-slf4j'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'ch.qos.logback:logback-classic'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {
-    // Chronicle Queue maps its files through sun.nio.ch.FileChannelImpl, unmaps them through jdk.internal.ref
-    // and reflects into java.lang.reflect
+    useJUnitPlatform()
+    // Fail a hung test with a stack trace at the offending line instead of stalling the task until its timeout.
+    // SEPARATE_THREAD is required: SAME_THREAD only checks after the method returns.
+    systemProperty 'junit.jupiter.execution.timeout.default', '120 s'
+    systemProperty 'junit.jupiter.execution.timeout.thread.mode.default', 'SEPARATE_THREAD'
     jvmArgs(
+        // Ignite reflects into these packages
+        '--add-opens=java.base/java.nio=ALL-UNNAMED',
+        '--add-opens=java.base/java.util=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
+        // Chronicle Queue maps its files through sun.nio.ch.FileChannelImpl, unmaps them through jdk.internal.ref
+        // and reflects into java.lang.reflect
         '--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED',
         '--add-exports=java.base/sun.nio.ch=ALL-UNNAMED',
         '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
     )
+    testLogging {
+        exceptionFormat = 'full'
+        showCauses = true
+        showStackTraces = true
+    }
+}
+
+// Stages the publication for JReleaser
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+
+            pom {
+                name = 'Kinotic Queue'
+                description = 'A durable, replicated queue for Kinotic clusters'
+                url = 'https://github.com/kinotic-ai/distributed-queue'
+
+                licenses {
+                    license {
+                        name = 'Elastic License 2.0 with Kinotic Additional Limitations'
+                        url = 'https://github.com/kinotic-ai/distributed-queue/blob/develop/LICENSE.md'
+                    }
+                }
+                developers {
+                    developer {
+                        name = 'Kinotic AI Development Team'
+                        email = 'develop@kinotic.ai'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:https://github.com/kinotic-ai/distributed-queue.git'
+                    developerConnection = 'scm:git:https://github.com/kinotic-ai/distributed-queue.git'
+                    url = 'https://github.com/kinotic-ai/distributed-queue'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url = layout.buildDirectory.dir('staging-deploy')
+        }
+    }
+}
+
+jreleaser {
+    signing {
+        active = 'ALWAYS'
+        armored = true
+        verify = false
+    }
+    deploy {
+        maven {
+            mavenCentral {
+                'release-deploy' {
+                    active = 'RELEASE'
+                    url = 'https://central.sonatype.com/api/v1/publisher'
+                    applyMavenCentralRules = true
+                    stagingRepository('build/staging-deploy')
+                }
+            }
+            nexus2 {
+                'snapshot-deploy' {
+                    active = 'SNAPSHOT'
+                    snapshotUrl = 'https://central.sonatype.com/repository/maven-snapshots/'
+                    applyMavenCentralRules = true
+                    snapshotSupported = true
+                    closeRepository = true
+                    releaseRepository = true
+                    stagingRepository('build/staging-deploy')
+                }
+            }
+        }
+    }
 }

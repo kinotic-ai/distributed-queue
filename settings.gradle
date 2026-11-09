@@ -1,1 +1,14 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+    // The plugin versions live in gradle.properties with every other version
+    plugins {
+        id 'io.freefair.lombok' version "${lombokPluginVersion}"
+        id 'io.spring.dependency-management' version "${springDependencyManagementVersion}"
+        id 'org.jreleaser' version "${jreleaserVersion}"
+    }
+}
+
 rootProject.name = 'kinotic-queue'
